@@ -2,15 +2,20 @@
 
 
 import ConfigParser
-import fcntl
-import glob
+import datetime
 import logging
 import optparse
 import os
 import pprint
 import shutil
+import smtplib
 import subprocess
 import sys
+
+from email.MIMEMultipart import MIMEMultipart
+from email.MIMEBase import MIMEBase
+from email.MIMEText import MIMEText
+from email import Encoders
 from xdg import BaseDirectory
 
 # Globals
@@ -43,12 +48,14 @@ STRINGS = {
     }
 }
 
+
 # MAIN FUNCTIONS ==============================
 
 def read_configuration():
 
     DEFAULT_CONFIGURATION = {
         "general": {
+            "cache_folder": os.path.join(BaseDirectory.xdg_cache_home, project_id),
             "ebookconvert_command": "ebook-convert"             
         },
         "mail": {
@@ -82,7 +89,7 @@ def read_configuration():
 
     config_folder = os.path.join(BaseDirectory.xdg_config_home, project_id)
     config_file = os.path.join(config_folder, "config.ini")
-    cache_folder = os.path.join(config_folder, "cache")
+    cache_folder = DEFAULT_CONFIGURATION.get("general").get("cache_folder")
         
     try: os.makedirs(config_folder)
     except OSError: pass
@@ -128,6 +135,36 @@ def read_configuration():
     return config
 
 
+def send_email(config, recipients, subject, text, attachments=None):
+    
+    msg = MIMEMultipart()
+
+    msg["From"] = config.get("smtp_from_address")
+    msg["To"] = ", ".join(recipients)
+    msg["Subject"] = subject
+
+    msg.attach(MIMEText(text))
+    
+    if attachments is None: attachments = []
+    
+    for attachment in attachments:
+        
+        part = MIMEBase("application", "octet-stream")
+        part.set_payload(open(attachment, "rb").read())
+        Encoders.encode_base64(part)
+        part.add_header("Content-Disposition", 'attachment; filename="%s"' % os.path.basename(attachment))
+        msg.attach(part)
+    
+    mailServer = smtplib.SMTP(config.get("smtp_host"), int(config.get("smtp_port")))
+    if(bool(config.get("smtp_start_tls")) == True):
+        mailServer.ehlo()
+        mailServer.starttls()
+        mailServer.ehlo()
+    mailServer.login(config.get("smtp_username"), config.get("smtp_password"))
+    mailServer.sendmail(config.get("smtp_username"), recipients, msg.as_string())
+    mailServer.close()
+
+
 def simple_shell(args, stdout=False):
 
     if stdout:
@@ -137,14 +174,35 @@ def simple_shell(args, stdout=False):
     return rc
 
 
+def generate_output(command, recipe_name, recipe_filename, cache_folder, overwrite=False):
+    
+    datestamp = datetime.datetime.now().strftime("%Y-%m-%d")
+    cache_filename = "%s-%s.mobi" % (datestamp, recipe_name)
+    cache_dest = os.path.join(cache_folder, cache_filename)
+    
+    cmd_string = "%s %s %s" % (command, recipe_filename, cache_dest)
+    args = cmd_string.split(" ")
+
+    if not os.path.exists(cache_dest) or overwrite:
+        simple_shell(args)
+    else:
+        logger.warn("Using previously cached output...")
+    
+    return cache_dest
+
+
 # ARGUMENT PARSING
 
 parser = optparse.OptionParser(usage="%prog or type %prog -h (--help) for help", description="", version=project_name+" v" + __revision__)
 
 parser.add_option("-v", action="count", dest="verbosity", default=DEFAULT_VERBOSITY, help="Verbosity. Add more -v to be more verbose (%s) [default: %%default]" % LOG_HELP)
 parser.add_option("-z", "--logfile", dest="logfile", default=None, help = "Log to file instead of console")
+parser.add_option("-f", "--force", dest="force", action="store_true",default=False, help = "Force generation of content, ignoring cached content")
+parser.add_option("-t", "--test", dest="test", action="store_true",default=False, help = "Perform test run (disables email sending)")
+
 
 (options, args) = parser.parse_args()
+
 
 # LOGGING
 
@@ -157,15 +215,28 @@ else:
     logging.basicConfig(level=verbosity, format=LOG_FORMAT_FILE, filename=logfilename, filemode="a")
     print >> sys.stderr, "Logging to %s" % logfilename
 
+
 # MAIN EXECUTION
 
+logger.info("")
+logger.info("Kindle Calibre Recipe Distribution System")
+logger.info("")
+
+logger.info("Subscriptions in use:")
+
+if len(args) == 0:
+    logger.info("ALL")
+    active_subscriptions = []
+else:
+    logger.info(", ".join(args))
+    active_subscriptions = args
+
+logger.info("")
+
 cfg = read_configuration()
-cache_folder = cfg.get("cache_folder")
 
-
-
-logger.info("Kindled")
-
+cfg_general = cfg.get("general")
+cfg_mail = cfg.get("mail")
 cfg_groups = cfg.get("groups")
 cfg_recipients = cfg.get("recipients")
 cfg_recipes = cfg.get("recipes")
@@ -176,52 +247,79 @@ for sub_name, sub_opts in cfg_subs.iteritems():
     sent_recipients = []
     
     logger.info("Processing subscription '%s'..." % (sub_name))
+
+    if len(active_subscriptions) > 0 and not sub_name in active_subscriptions:
+        
+        logger.warn("Skipping inactive subscription...")
+        continue
+    
     recipes, groups = sub_opts.get("recipes"), sub_opts.get("groups")
+    
+    recipe_attachments = []
     
     for recipe_name in recipes:
         
         if not recipe_name in cfg_recipes:
-            logger.warn("  Recipe '%s' not configured!" % (recipe_name))
+            
+            logger.warn("Recipe '%s' not configured!" % (recipe_name))
             continue
             
         else:
             
             recipe_filename = cfg_recipes[recipe_name]
-            logger.info("  Processing recipe '%s'..." % (recipe_name))
+            logger.info("Processing recipe '%s'..." % (recipe_name))
             
             if not os.path.exists(recipe_filename):
-                logger.warn("    Recipe file '%s' does not exist!" % (recipe_filename))
+                logger.warn("Recipe file '%s' does not exist!" % (recipe_filename))
                 continue
             
-            logger.info("    Generating recipe output...")
+            logger.info("Generating recipe output...")
             
-            ### Generation goes here
+            output_filename = generate_output(cfg_general.get("ebookconvert_command"), 
+                                              recipe_name, 
+                                              recipe_filename, 
+                                              cfg_general.get("cache_folder"),
+                                              overwrite=options.force)
             
             for group_name in groups:
                 
                 if not group_name in cfg_groups:
-                    logger.warn("      Group '%s' not configured!" % (group_name))
+                    logger.warn("Group '%s' not configured!" % (group_name))
                     continue
                 
                 group_recipients = cfg_groups[group_name]
-                logger.info("    Sending output to group '%s'..." % (group_name))
+                logger.info("Sending output to group '%s'..." % (group_name))
             
                 for recipient_name in group_recipients:
                     
                     if not recipient_name in cfg_recipients:
-                        logger.warn("      Recipient '%s' not configured!" % (recipient_name))
+                        logger.warn("Recipient '%s' not configured!" % (recipient_name))
                         continue
                     
                     email_address = cfg_recipients[recipient_name]
                     
                     if email_address in sent_recipients:
-                        logger.warn("      Already sent to recipient '%s'!" % (recipient_name))
+                        logger.warn("Already queued for recipient '%s'!" % (recipient_name))
                         continue
                     
-                    logger.info("      Sending output to recipient '%s'..." % (recipient_name))
+                    logger.info("Queuing output to recipient '%s'..." % (recipient_name))
                         
-                    ### Sending goes here
-                    
                     sent_recipients.append(email_address)    
-                    
+                
+        recipe_attachments.append(output_filename)
+                
+    count = len(sent_recipients)
+
+    logger.info("Sending output to %i recipients..." % (count))    
         
+    for sent_recipient in sent_recipients:
+        logger.debug("- %s" % (sent_recipient))
+        
+    if not options.test:
+        send_email(cfg_mail, sent_recipients, sub_name, "", recipe_attachments)    
+        
+    logger.info("")
+    
+logger.info("Done.")
+logger.info("") 
+
