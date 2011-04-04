@@ -22,6 +22,7 @@ from xdg import BaseDirectory
 
 project_id = "kindled"
 project_name = "Kindle Daemon"
+project_description = "Calibre Distribution System for Kindle"
 __revision__ = "0.10"
 __docformat__ = "restructuredtext en"
 
@@ -107,6 +108,9 @@ def read_configuration():
         cfg.write(cfgfh)
         cfgfh.close()
         cfg.read(config_file) 
+        logger.warn("No configuration found.")
+        logger.warn("Generated default configuration at '%s'." % (config_file))
+        sys.exit(0)
 
     cfg_general = dict(cfg.items("general"))
     cfg_mail = dict(cfg.items("mail"))
@@ -123,6 +127,11 @@ def read_configuration():
         groups = [group.strip() for group in opts.split(";")[1].split(",")]
         cfg_subscriptions[name] = {"recipes": recipes, "groups": groups}
 
+	if cfg_mail.get("smtp_from_address") == "user@gmail.com":
+		logger.warn("Default example configuration found.")
+		logger.warn("Please configure by modifying '%s'." % (config_file))
+		sys.exit(1)
+		
     config = {
         "general": cfg_general,
         "mail": cfg_mail,
@@ -174,17 +183,17 @@ def simple_shell(args, stdout=False):
     return rc
 
 
-def generate_output(command, recipe_name, recipe_filename, cache_folder, overwrite=False):
+def generate_output(command, recipe_name, recipe_filename, cache_folder, overwrite=False, debug=False):
     
     datestamp = datetime.datetime.now().strftime("%Y-%m-%d")
     cache_filename = "%s-%s.mobi" % (datestamp, recipe_name)
     cache_dest = os.path.join(cache_folder, cache_filename)
     
-    cmd_string = "%s %s %s" % (command, recipe_filename, cache_dest)
-    args = cmd_string.split(" ")
+    args = [command]
+    args.extend([recipe_filename, cache_dest])
 
     if not os.path.exists(cache_dest) or overwrite:
-        simple_shell(args)
+        simple_shell(args, stdout=debug)
     else:
         logger.warn("Using previously cached output...")
     
@@ -193,12 +202,13 @@ def generate_output(command, recipe_name, recipe_filename, cache_folder, overwri
 
 # ARGUMENT PARSING
 
-parser = optparse.OptionParser(usage="%prog or type %prog -h (--help) for help", description="", version=project_name+" v" + __revision__)
+parser = optparse.OptionParser(usage="%prog or type %prog -h (--help) for help", description=project_description, version=project_name+" v" + __revision__)
 
 parser.add_option("-v", action="count", dest="verbosity", default=DEFAULT_VERBOSITY, help="Verbosity. Add more -v to be more verbose (%s) [default: %%default]" % LOG_HELP)
 parser.add_option("-z", "--logfile", dest="logfile", default=None, help = "Log to file instead of console")
-parser.add_option("-f", "--force", dest="force", action="store_true",default=False, help = "Force generation of content, ignoring cached content")
-parser.add_option("-t", "--test", dest="test", action="store_true",default=False, help = "Perform test run (disables email sending)")
+parser.add_option("-f", "--force", dest="force", action="store_true", default=False, help = "Force generation of content, ignoring cached content")
+parser.add_option("-t", "--test", dest="test", action="store_true", default=False, help = "Perform test run (disables email sending)")
+parser.add_option("-d", "--debug", dest="debug", action="store_true", default=False, help = "Run in debug mode (outputs Calibre messages)")
 
 
 (options, args) = parser.parse_args()
@@ -218,20 +228,18 @@ else:
 
 # MAIN EXECUTION
 
-logger.info("")
+logger.info("%s v%s" % (project_name, __revision__))
 logger.info("Kindle Calibre Recipe Distribution System")
 logger.info("")
 
-logger.info("Subscriptions in use:")
-
 if len(args) == 0:
-    logger.info("ALL")
     active_subscriptions = []
+    active_subscriptions_str = "ALL"
 else:
-    logger.info(", ".join(args))
     active_subscriptions = args
+    active_subscriptions_str = ", ".join(active_subscriptions)
 
-logger.info("")
+logger.info("Active subscriptions: %s" % (active_subscriptions_str))
 
 cfg = read_configuration()
 
@@ -266,7 +274,7 @@ for sub_name, sub_opts in cfg_subs.iteritems():
             
         else:
             
-            recipe_filename = cfg_recipes[recipe_name]
+            recipe_filename = os.path.expanduser(cfg_recipes[recipe_name])
             logger.info("Processing recipe '%s'..." % (recipe_name))
             
             if not os.path.exists(recipe_filename):
@@ -279,7 +287,8 @@ for sub_name, sub_opts in cfg_subs.iteritems():
                                               recipe_name, 
                                               recipe_filename, 
                                               cfg_general.get("cache_folder"),
-                                              overwrite=options.force)
+                                              overwrite=options.force,
+                                              debug=options.debug)
             
             for group_name in groups:
                 
@@ -308,18 +317,22 @@ for sub_name, sub_opts in cfg_subs.iteritems():
                 
         recipe_attachments.append(output_filename)
                 
-    count = len(sent_recipients)
-
-    logger.info("Sending output to %i recipients..." % (count))    
-        
-    for sent_recipient in sent_recipients:
-        logger.debug("- %s" % (sent_recipient))
-        
-    if not options.test:
-        send_email(cfg_mail, sent_recipients, sub_name, "", recipe_attachments)    
-        
-    logger.info("")
+    recipient_count = len(sent_recipients)
+    attachment_count = len(recipe_attachments)
     
+    if recipient_count > 0 and attachment_count > 0:
+		
+		logger.info("Sending %i attachments to %i recipients..." % (attachment_count, recipient_count))    
+			
+		for sent_recipient in sent_recipients:
+			logger.debug("- %s" % (sent_recipient))
+			
+		if not options.test:
+			send_email(cfg_mail, sent_recipients, sub_name, "", recipe_attachments)    
+			
+    else:
+		
+		logger.warn("Aborting output as either no output was produced or no recipients were matched.")
+			
 logger.info("Done.")
-logger.info("") 
 
