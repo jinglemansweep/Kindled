@@ -8,12 +8,12 @@ Kindle MOBI files from Calibre recipes.
 Installation
 ------------
 
-To install Kindled, simply copy the "kindled.py" script somewhere on your
+To install Kindled, simply copy the `kindled.py` script somewhere on your
 configured PATH and run it.
 
 The [Calibre](http://calibre-ebook.com/) ebook conversion suite is required
 for Kindled to operate. However, Kindled is designed to run headless without
-a GUI as it uses the "ebook-convert" command line tool that is supplied with
+a GUI as it uses the `ebook-convert` command line tool that is supplied with
 Calibre.
 
 To install Calibre on Ubuntu, you can simply install the package from
@@ -27,7 +27,7 @@ Configuration
 Configuration of Kindled involves specifying various different
 components within the configuration file.
 Kindled will automatically generate a default example configuration file
-when first run. It is usually located in "~/.config/kindled/kindled.ini".
+when first run. It is usually located in `~/.config/kindled/kindled.ini`.
 You will need to modify the configuration file before running again as
 Kindled will detect the example configuration and will exit.
 
@@ -102,7 +102,7 @@ Processed all subscriptions:
 
     ./kindled.py
     
-Processes only "guardian_family" and "times_friends_and_me" subscriptions:
+Processes only **guardian_family** and **times_friends_and_me** subscriptions:
 
     ./kindled.py guardian_family times_friends_and_me
     
@@ -111,7 +111,7 @@ For example, you can had Kindled appear in your crontab more than once
 on different schedules, but processing different subscriptions.
 
 By default, Kindled will cache all produced content in the configured
-cache folder, which is by default "~/.cache/kindled". If you want to
+cache folder, which is by default `~/.cache/kindled`. If you want to
 override the cache, you can either clear the contents of the cache folder
 or run Kindled with the `-f` or `--force`` option.
 
