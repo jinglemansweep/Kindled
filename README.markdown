@@ -102,7 +102,7 @@ Processed all subscriptions:
 
     ./kindled.py
     
-Processes only **guardian_family** and **times_friends_and_me** subscriptions:
+Processes only `guardian_family` and `times_friends_and_me` subscriptions:
 
     ./kindled.py guardian_family times_friends_and_me
     
