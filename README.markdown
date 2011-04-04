@@ -39,8 +39,7 @@ configuration, Kindled comprises of four main items:
 * Groups
 * Subscriptions
 
-Recipes
-~~~~~~~
+### Recipes
 
 You can add your favourite Calibre recipes within the configuration file
 by simply adding the path and filename to it (along with a friendly unique
@@ -51,8 +50,7 @@ Examples:
     the_times = ~/recipes/TheTimes.recipe
     the_guardian = ~/recipes/TheGuardian.recipe
 
-Recipients
-~~~~~~~~~~
+### Recipients
 
 Recipients are basically people (or destinations). A recipient would
 primarily be a Kindle "free" email address (e.g. user@free.kindle.com).
@@ -65,8 +63,7 @@ Examples:
     brother = my_brother@free.kindle.com
     best_friend = best_friend@free.kindle.com
 
-Groups
-~~~~~~
+### Groups
 
 Groups are one or more recipients. If you only want to publish to a
 single recipient, you will still need to define a group and simply add
@@ -81,8 +78,7 @@ Examples:
     friends = best_friend
     everyone = me,brother,best_friend
 
-Subscriptions
-~~~~~~~~~~~~~
+### Subscriptions
 
 A subscription combines recipes with groups. It consists of a comma
 delimited list of recipe friendly names, followed by a semi-colon and
