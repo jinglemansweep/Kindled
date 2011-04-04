@@ -127,11 +127,11 @@ def read_configuration():
         groups = [group.strip() for group in opts.split(";")[1].split(",")]
         cfg_subscriptions[name] = {"recipes": recipes, "groups": groups}
 
-	if cfg_mail.get("smtp_from_address") == "user@gmail.com":
-		logger.warn("Default example configuration found.")
-		logger.warn("Please configure by modifying '%s'." % (config_file))
-		sys.exit(1)
-		
+    if cfg_mail.get("smtp_from_address") == "user@gmail.com":
+        logger.warn("Default example configuration found.")
+        logger.warn("Please configure by modifying '%s'." % (config_file))
+        sys.exit(1)
+        
     config = {
         "general": cfg_general,
         "mail": cfg_mail,
@@ -321,18 +321,17 @@ for sub_name, sub_opts in cfg_subs.iteritems():
     attachment_count = len(recipe_attachments)
     
     if recipient_count > 0 and attachment_count > 0:
-		
-		logger.info("Sending %i attachments to %i recipients..." % (attachment_count, recipient_count))    
-			
-		for sent_recipient in sent_recipients:
-			logger.debug("- %s" % (sent_recipient))
-			
-		if not options.test:
-			send_email(cfg_mail, sent_recipients, sub_name, "", recipe_attachments)    
-			
+        
+        logger.info("Sending %i attachments to %i recipients..." % (attachment_count, recipient_count))    
+            
+        for sent_recipient in sent_recipients:
+            logger.debug("- %s" % (sent_recipient))
+            
+        if not options.test:
+            send_email(cfg_mail, sent_recipients, sub_name, "", recipe_attachments)    
+            
     else:
-		
-		logger.warn("Aborting output as either no output was produced or no recipients were matched.")
-			
+        
+        logger.warn("Aborting output as either no output was produced or no recipients were matched.")
+            
 logger.info("Done.")
-
