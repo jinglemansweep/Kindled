@@ -116,7 +116,7 @@ Processes only `guardian_family` and `times_friends_and_me` subscriptions:
     ./kindled.py guardian_family times_friends_and_me
     
 Specifying certain subscriptions is useful for scheduled (cron) tasks.
-For example, you can had Kindled appear in your crontab more than once
+For example, you can have Kindled appear in your crontab more than once
 on different schedules, but processing different subscriptions.
 
 By default, Kindled will cache all produced content in the configured
