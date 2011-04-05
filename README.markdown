@@ -1,15 +1,21 @@
 Kindled
 =======
 
-
 Kindled is a simple command line tool that controls the production of
 Kindle MOBI files from Calibre recipes.
 
 Installation
 ------------
 
-To install Kindled, simply copy the `kindled.py` script somewhere on your
-configured PATH and run it.
+Kindled is now available on [PyPI](http://pypi.python.org/pypi/kindled/).
+You can install Kindled via **easy_install** as follows:
+
+    sudo easy_install kindled
+    
+If you do not have **easy_install** installed, it can be installed using
+your package manager. For example, using Ubuntu/Debian:
+
+    sudo aptitude install python-setuptools
 
 The [Calibre](http://calibre-ebook.com/) ebook conversion suite is required
 for Kindled to operate. However, Kindled is designed to run headless without
@@ -20,6 +26,9 @@ To install Calibre on Ubuntu, you can simply install the package from
 the official repositories:
 
     sudo aptitude install calibre
+
+To install Kindled manually, simply copy the `kindled.py` script somewhere
+on your configured PATH and run it.
 
 Configuration
 -------------
