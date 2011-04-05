@@ -27,7 +27,7 @@ the official repositories:
 
     sudo aptitude install calibre
 
-To install Kindled manually, simply copy the `kindled.py` script somewhere
+To install Kindled manually, simply copy the `bin/kindled` script somewhere
 on your configured PATH and run it.
 
 Configuration
