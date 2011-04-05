@@ -1,6 +1,5 @@
 #!/usr/bin/env python
-
-
+    
 import ConfigParser
 import datetime
 import logging
@@ -23,7 +22,7 @@ from xdg import BaseDirectory
 project_id = "kindled"
 project_name = "Kindle Daemon"
 project_description = "Calibre Distribution System for Kindle"
-__revision__ = "0.10"
+__revision__ = "0.11"
 __docformat__ = "restructuredtext en"
 
 # Base Configuration
