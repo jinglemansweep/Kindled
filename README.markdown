@@ -109,11 +109,11 @@ you want to process as arguments (separated by a space).
 
 Processed all subscriptions:
 
-    ./kindled.py
+    kindled
     
 Processes only `guardian_family` and `times_friends_and_me` subscriptions:
 
-    ./kindled.py guardian_family times_friends_and_me
+    kindled guardian_family times_friends_and_me
     
 Specifying certain subscriptions is useful for scheduled (cron) tasks.
 For example, you can have Kindled appear in your crontab more than once
