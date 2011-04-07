@@ -2,3 +2,4 @@ dist
 build
 .*project
 *.geany
+*.pyc
