@@ -1,6 +1,8 @@
 Kindled
 =======
 
+[![Flattr this git repo](http://api.flattr.com/button/flattr-badge-large.png)](https://flattr.com/submit/auto?user_id=jinglemansweep&url=https://github.com/jingleman/Kindled&title=Kindled&language=&tags=github&category=software)
+
 Kindled is a simple command line tool that controls the production of
 Kindle MOBI files from Calibre recipes.
 
